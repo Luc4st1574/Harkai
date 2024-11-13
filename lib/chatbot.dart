@@ -51,9 +51,9 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
       );
       session = model?.startChat();
 
-      // Confirming initialization with a test message
-      final testPrompt = await _sendToHarki("Test message to confirm Harki initialization.");
-      debugPrint("Test response: $testPrompt");
+      // Set the bot's awareness of its context and name
+      final introMessage = await _sendToHarki("You are Harki, the AI assistant inside this app. Keep responses focused and clear.");
+      debugPrint("Harki initialization message: $introMessage");
 
       setState(() => _isInitialized = true);
     } catch (e) {
@@ -117,21 +117,25 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
         elevation: 0,
         title: const Text('AI Powered Chat', style: TextStyle(color: Colors.white)),
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 15), // Adjust padding here for overall tightness
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
           ),
-        ),
-        child: Column(
-          children: [
-            const Divider(),
-            _buildMessageList(),
-            if (_isLoadingResponse) _buildLoadingIndicator(),
-            _buildMessageInput(),
-          ],
+        padding: const EdgeInsets.symmetric(horizontal: 5), // Added padding to make it tighter
+          child: Column(
+            children: [
+              // const Divider(), // Removed the Divider to eliminate the black line
+              _buildMessageList(),
+              if (_isLoadingResponse) _buildLoadingIndicator(),
+              _buildMessageInput(),
+            ],
+          ),
         ),
       ),
     );
