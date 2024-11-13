@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart' as url_launcher;
 import 'profile.dart';
+import 'chatbot.dart';
 
 // Enum for alert types
 enum AlertType {
@@ -300,7 +301,10 @@ class _HomeState extends State<Home> {
             children: [
               ElevatedButton(
                 onPressed: () {
-                  // Implement chatbot functionality
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ChatBotScreen()),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
