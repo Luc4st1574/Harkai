@@ -1,11 +1,12 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, deprecated_member_use
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart' as url_launcher;
 import 'package:geolocator/geolocator.dart';
-import 'package:geocoding/geocoding.dart';
+import 'package:flutter_google_maps_webservices/geocoding.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'profile.dart';
 import 'chatbot.dart';
 
@@ -42,7 +43,6 @@ class _HomeState extends State<Home> {
   AlertType _selectedAlert = AlertType.none;
   String _locationText = 'Loading location...';
 
-  // Store latitude and longitude for later use
   double? _latitude;
   double? _longitude;
 
@@ -73,6 +73,8 @@ class _HomeState extends State<Home> {
     ),
   };
 
+  final GoogleMapsGeocoding _googleGeocoding = GoogleMapsGeocoding(apiKey: dotenv.env['MAPS_KEY']!);
+
   @override
   void initState() {
     super.initState();
@@ -93,7 +95,20 @@ class _HomeState extends State<Home> {
   }
 
   Future<void> _determinePosition() async {
-    LocationPermission permission = await Geolocator.checkPermission();
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // Check if location services are enabled.
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      setState(() {
+        _locationText = 'Location services are disabled';
+      });
+      return;
+    }
+
+    // Check and request location permission
+    permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
@@ -111,49 +126,67 @@ class _HomeState extends State<Home> {
       return;
     }
 
-    final position = await Geolocator.getCurrentPosition();
-    _latitude = position.latitude;
-    _longitude = position.longitude;
+    // Request current position with high accuracy
+    try {
+      print("Attempting to retrieve current position...");
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high, // Ensure high accuracy
+      );
+      _latitude = position.latitude;
+      _longitude = position.longitude;
 
-    _getAddressFromCoordinates(_latitude!, _longitude!);
+      // Debug prints to verify latitude and longitude
+      print("Current Position - Latitude: $_latitude, Longitude: $_longitude");
+
+      // Fetch address from Google Geocoding API
+      await _getAddressFromCoordinates(_latitude!, _longitude!);
+    } catch (e) {
+      print('Error getting location: $e');
+      setState(() {
+        _locationText = 'Failed to get location';
+      });
+    }
   }
 
   Future<void> _getAddressFromCoordinates(double latitude, double longitude) async {
-  try {
-    List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
-    if (placemarks.isEmpty) {
+    try {
+      print("Fetching address for Latitude: $latitude, Longitude: $longitude");
+      
+      final response = await _googleGeocoding.searchByLocation(Location(lat: latitude, lng: longitude));
+      if (response.results.isEmpty) {
+        setState(() {
+          _locationText = 'Location: ${latitude.toStringAsFixed(4)}, ${longitude.toStringAsFixed(4)}';
+        });
+        return;
+      }
+
+      final place = response.results.first;
+      String? city;
+      String? country;
+
+      // Loop through address components to find city and country
+      for (var component in place.addressComponents) {
+        if (component.types.contains("locality")) {
+          city = component.longName;
+        } else if (component.types.contains("country")) {
+          country = component.longName;
+        }
+      }
+
+      print("Parsed Location - City: $city, Country: $country");
+
       setState(() {
-        // Fallback to coordinates if no address is found
+        _locationText = city != null && country != null
+            ? 'You are in $city, $country'
+            : 'Location: ${latitude.toStringAsFixed(4)}, ${longitude.toStringAsFixed(4)}';
+      });
+    } catch (e) {
+      print('Geocoding error: $e');
+      setState(() {
         _locationText = 'Location: ${latitude.toStringAsFixed(4)}, ${longitude.toStringAsFixed(4)}';
       });
-      return;
     }
-    
-    Placemark place = placemarks[0];
-    // Check if we have locality and country information
-    if (place.locality?.isNotEmpty == true && place.country?.isNotEmpty == true) {
-      setState(() {
-        _locationText = '${place.locality}, ${place.country}';
-      });
-    } else if (place.subAdministrativeArea?.isNotEmpty == true) {
-      // Fallback to broader location info if available
-      setState(() {
-        _locationText = '${place.subAdministrativeArea}, ${place.country}';
-      });
-    } else {
-      // Fallback to coordinates if no meaningful address data
-      setState(() {
-        _locationText = 'Location: ${latitude.toStringAsFixed(4)}, ${longitude.toStringAsFixed(4)}';
-      });
-    }
-  } catch (e) {
-    print('Geocoding error: $e'); // Add logging for debugging
-    setState(() {
-      // Use coordinates as fallback instead of error message
-      _locationText = 'Location: ${latitude.toStringAsFixed(4)}, ${longitude.toStringAsFixed(4)}';
-    });
   }
-}
 
   String get currentEmergencyNumber {
     return _selectedAlert == AlertType.none
