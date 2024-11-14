@@ -228,7 +228,7 @@ class RegisterState extends State<Register> {
             Navigator.pop(context);
           },
           child: const Text(
-            'SIGN IN',
+            'LOG IN',
             style: TextStyle(color: Color(0xFF57D463)),
           ),
         ),

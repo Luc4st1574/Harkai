@@ -35,11 +35,17 @@ class ProfileState extends State<Profile> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const CircleAvatar(
-                radius: 50,
-                backgroundColor: Color(0xFF57D463),
-                child: Icon(Icons.person, size: 50, color: Color(0xFF001F3F)),
-              ),
+              // Display Google profile picture if available, otherwise default icon
+              user?.photoURL != null
+                  ? CircleAvatar(
+                      radius: 50,
+                      backgroundImage: NetworkImage(user!.photoURL!),
+                    )
+                  : const CircleAvatar(
+                      radius: 50,
+                      backgroundColor: Color(0xFF57D463),
+                      child: Icon(Icons.person, size: 50, color: Color(0xFF001F3F)),
+                    ),
               const SizedBox(height: 16),
               Text(
                 user?.displayName ?? 'User',
@@ -154,13 +160,13 @@ class ProfileState extends State<Profile> {
       style: ElevatedButton.styleFrom(
         backgroundColor: const Color(0xFF57D463),
         padding: const EdgeInsets.symmetric(vertical: 12),
-        minimumSize: const Size(double.infinity, 50), // Set button to take full available width
+        minimumSize: const Size(double.infinity, 50),
       ),
     );
   }
 
   Future<void> _handleBlockCard() async {
-    const emergencyNumber = '1820'; // Card blocking service number
+    const emergencyNumber = '1820';
     final phoneNumber = Uri.encodeFull(emergencyNumber);
     final Uri launchUri = Uri(scheme: 'tel', path: phoneNumber);
 
