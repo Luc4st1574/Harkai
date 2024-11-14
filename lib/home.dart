@@ -1,20 +1,22 @@
+// ignore_for_file: avoid_print
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart' as url_launcher;
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 import 'profile.dart';
 import 'chatbot.dart';
 
-// Enum for alert types
 enum AlertType {
   fire,
   crash,
   theft,
   dog,
-  none
+  none,
 }
 
-// Class to hold alert information
 class AlertInfo {
   final String title;
   final Color color;
@@ -38,8 +40,12 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   AlertType _selectedAlert = AlertType.none;
+  String _locationText = 'Loading location...';
 
-  // Map to store alert information
+  // Store latitude and longitude for later use
+  double? _latitude;
+  double? _longitude;
+
   final Map<AlertType, AlertInfo> alertInfoMap = {
     AlertType.fire: AlertInfo(
       title: 'Fire Alert',
@@ -67,7 +73,88 @@ class _HomeState extends State<Home> {
     ),
   };
 
-  // Get current emergency number based on selected alert
+  @override
+  void initState() {
+    super.initState();
+    _requestPermissions();
+    _determinePosition();
+  }
+
+  Future<void> _requestPermissions() async {
+    var locationStatus = await Permission.locationWhenInUse.status;
+    if (!locationStatus.isGranted) {
+      await Permission.locationWhenInUse.request();
+    }
+
+    var phoneStatus = await Permission.phone.status;
+    if (!phoneStatus.isGranted) {
+      await Permission.phone.request();
+    }
+  }
+
+  Future<void> _determinePosition() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        setState(() {
+          _locationText = 'Location permission denied';
+        });
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      setState(() {
+        _locationText = 'Location permissions are permanently denied';
+      });
+      return;
+    }
+
+    final position = await Geolocator.getCurrentPosition();
+    _latitude = position.latitude;
+    _longitude = position.longitude;
+
+    _getAddressFromCoordinates(_latitude!, _longitude!);
+  }
+
+  Future<void> _getAddressFromCoordinates(double latitude, double longitude) async {
+  try {
+    List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
+    if (placemarks.isEmpty) {
+      setState(() {
+        // Fallback to coordinates if no address is found
+        _locationText = 'Location: ${latitude.toStringAsFixed(4)}, ${longitude.toStringAsFixed(4)}';
+      });
+      return;
+    }
+    
+    Placemark place = placemarks[0];
+    // Check if we have locality and country information
+    if (place.locality?.isNotEmpty == true && place.country?.isNotEmpty == true) {
+      setState(() {
+        _locationText = '${place.locality}, ${place.country}';
+      });
+    } else if (place.subAdministrativeArea?.isNotEmpty == true) {
+      // Fallback to broader location info if available
+      setState(() {
+        _locationText = '${place.subAdministrativeArea}, ${place.country}';
+      });
+    } else {
+      // Fallback to coordinates if no meaningful address data
+      setState(() {
+        _locationText = 'Location: ${latitude.toStringAsFixed(4)}, ${longitude.toStringAsFixed(4)}';
+      });
+    }
+  } catch (e) {
+    print('Geocoding error: $e'); // Add logging for debugging
+    setState(() {
+      // Use coordinates as fallback instead of error message
+      _locationText = 'Location: ${latitude.toStringAsFixed(4)}, ${longitude.toStringAsFixed(4)}';
+    });
+  }
+}
+
   String get currentEmergencyNumber {
     return _selectedAlert == AlertType.none
         ? '911'
@@ -110,7 +197,7 @@ class _HomeState extends State<Home> {
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
         final user = snapshot.data;
-        
+
         return Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
@@ -126,7 +213,6 @@ class _HomeState extends State<Home> {
                 },
                 child: Column(
                   children: [
-                    // Display Google profile picture if available, otherwise default icon
                     user?.photoURL != null
                         ? CircleAvatar(
                             backgroundImage: NetworkImage(user!.photoURL!),
@@ -155,17 +241,23 @@ class _HomeState extends State<Home> {
   }
 
   Widget _buildLocationInfo() {
-    return const Padding(
-      padding: EdgeInsets.all(16),
+    return Padding(
+      padding: const EdgeInsets.all(16),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
-            'You are in Trujillo, Peru',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF57D463)),
+            _locationText,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF57D463),
+            ),
           ),
-          Text(
+          const Text(
             'This is happening in your area',
+            textAlign: TextAlign.center,
             style: TextStyle(fontSize: 18, color: Color(0xFF57D463)),
           ),
         ],
@@ -254,7 +346,7 @@ class _HomeState extends State<Home> {
                 );
 
                 var status = await Permission.phone.status;
-                
+
                 if (status.isGranted) {
                   try {
                     await url_launcher.launchUrl(
@@ -270,7 +362,7 @@ class _HomeState extends State<Home> {
                   }
                 } else {
                   var result = await Permission.phone.request();
-                  
+
                   if (result.isGranted) {
                     try {
                       await url_launcher.launchUrl(
