@@ -1,41 +1,82 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'services/auth_service.dart';
+import 'home.dart';
 
-class Signup extends StatefulWidget {
-  const Signup({super.key});
+class Register extends StatefulWidget {
+  const Register({super.key});
 
   @override
-  SignupState createState() => SignupState();
+  RegisterState createState() => RegisterState();
 }
 
-class SignupState extends State<Signup> {
+class RegisterState extends State<Register> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isPasswordVisible = false; // Variable to track password visibility
 
   Future<void> _handleGoogleSignIn(BuildContext context) async {
-    try {
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) return;
+  try {
+    final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+    if (googleUser == null) return; // User canceled the sign-in
 
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
+    final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
 
-      await FirebaseAuth.instance.signInWithCredential(credential);
-      // Navigate to home screen or perform any other action after successful registration
-    } catch (e) {
-      // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to sign in with Google: $e')),
-      );
-    }
+    await FirebaseAuth.instance.signInWithCredential(credential);
+
+    // Navigate to Home if sign-in is successful
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Google Sign-In successful!')),
+    );
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const Home()),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Failed to sign in with Google: $e')),
+    );
   }
+}
+
+  Future<void> _handleEmailSignup(BuildContext context) async {
+  try {
+    await AuthService().signup(
+      userName: _usernameController.text,
+      email: _emailController.text,
+      password: _passwordController.text,
+      context: context,
+    );
+
+    // Navigate to Home after successful signup
+    if (!mounted) return;
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const Home()),
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Signup successful!')),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Failed to sign up: $e')),
+    );
+  }
+}
+
 
   @override
   void dispose() {
@@ -50,7 +91,6 @@ class SignupState extends State<Signup> {
     return Scaffold(
       body: Stack(
         children: [
-          // Background image
           _buildBackgroundImage(),
           SafeArea(
             child: SingleChildScrollView(
@@ -59,9 +99,8 @@ class SignupState extends State<Signup> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // Logo
                     _buildLogo(),
-                    const SizedBox(height: 30), // Increased vertical spacing
+                    const SizedBox(height: 30),
                     const Text(
                       'REGISTER',
                       style: TextStyle(
@@ -71,26 +110,23 @@ class SignupState extends State<Signup> {
                       ),
                     ),
                     const SizedBox(height: 40),
-                    // Username field
                     CustomTextField(
                       controller: _usernameController,
                       hintText: 'Username',
                       icon: Icons.person,
                     ),
-                    const SizedBox(height: 25), // Increased vertical spacing
-                    // Email field
+                    const SizedBox(height: 25),
                     CustomTextField(
                       controller: _emailController,
                       hintText: 'Email',
                       icon: Icons.email,
                     ),
-                    const SizedBox(height: 25), // Increased vertical spacing
-                    // Password field with visibility toggle
+                    const SizedBox(height: 25),
                     CustomTextField(
                       controller: _passwordController,
                       hintText: 'Password',
                       icon: Icons.lock,
-                      obscureText: !_isPasswordVisible, // Control visibility
+                      obscureText: !_isPasswordVisible,
                       suffixIcon: IconButton(
                         icon: Icon(
                           _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
@@ -98,19 +134,16 @@ class SignupState extends State<Signup> {
                         ),
                         onPressed: () {
                           setState(() {
-                            _isPasswordVisible = !_isPasswordVisible; // Toggle visibility
+                            _isPasswordVisible = !_isPasswordVisible;
                           });
                         },
                       ),
                     ),
-                    const SizedBox(height: 45), // Increased vertical spacing
-                    // Sign Up button
+                    const SizedBox(height: 45),
                     _buildSignupButton(context),
-                    const SizedBox(height: 25), // Increased vertical spacing
-                    // Google Register button
+                    const SizedBox(height: 25),
                     _buildGoogleSignupButton(context),
-                    const SizedBox(height: 30), // Increased vertical spacing
-                    // Sign In link
+                    const SizedBox(height: 30),
                     _buildSignInLink(context),
                   ],
                 ),
@@ -121,8 +154,6 @@ class SignupState extends State<Signup> {
       ),
     );
   }
-
-  // Helper widget methods
 
   Widget _buildBackgroundImage() {
     return Container(
@@ -147,14 +178,7 @@ class SignupState extends State<Signup> {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () async {
-          await AuthService().signup(
-            userName: _usernameController.text,
-            email: _emailController.text,
-            password: _passwordController.text,
-            context: context,
-          );
-        },
+        onPressed: () async => await _handleEmailSignup(context),
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF011935),
           padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
@@ -187,7 +211,7 @@ class SignupState extends State<Signup> {
           height: 24,
         ),
         label: const Text(
-          'Register with Google',
+          'Sign up with Google',
           style: TextStyle(fontSize: 18, color: Colors.black87),
         ),
       ),
@@ -218,7 +242,7 @@ class CustomTextField extends StatelessWidget {
   final String hintText;
   final IconData icon;
   final bool obscureText;
-  final Widget? suffixIcon; // Optional suffix icon parameter
+  final Widget? suffixIcon;
 
   const CustomTextField({
     super.key,
@@ -226,7 +250,7 @@ class CustomTextField extends StatelessWidget {
     required this.hintText,
     required this.icon,
     this.obscureText = false,
-    this.suffixIcon, // Add suffix icon parameter
+    this.suffixIcon,
   });
 
   @override
@@ -239,14 +263,14 @@ class CustomTextField extends StatelessWidget {
         prefixIcon: Icon(icon, color: const Color(0xFF57D463)),
         hintText: hintText,
         hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-        contentPadding: const EdgeInsets.symmetric(vertical: 15), // Added vertical padding
+        contentPadding: const EdgeInsets.symmetric(vertical: 15),
         enabledBorder: const UnderlineInputBorder(
           borderSide: BorderSide(color: Color(0xFF57D463)),
         ),
         focusedBorder: const UnderlineInputBorder(
           borderSide: BorderSide(color: Color(0xFF57D463)),
         ),
-        suffixIcon: suffixIcon, // Include the suffix icon in the decoration
+        suffixIcon: suffixIcon,
       ),
       keyboardAppearance: Brightness.dark,
       cursorColor: const Color(0xFF57D463),

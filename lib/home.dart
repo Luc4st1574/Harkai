@@ -116,7 +116,7 @@ class _HomeState extends State<Home> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Image.asset('assets/images/logo.png', height: 50),
+              Image.asset('assets/images/logo.png', height: 60),
               GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -126,13 +126,23 @@ class _HomeState extends State<Home> {
                 },
                 child: Column(
                   children: [
-                    const Icon(Icons.account_circle, color: Color(0xFF57D463), size: 30),
+                    // Display Google profile picture if available, otherwise default icon
+                    user?.photoURL != null
+                        ? CircleAvatar(
+                            backgroundImage: NetworkImage(user!.photoURL!),
+                            radius: 25,
+                          )
+                        : const Icon(
+                            Icons.account_circle,
+                            color: Color(0xFF57D463),
+                            size: 50,
+                          ),
                     const SizedBox(height: 4),
                     Text(
                       user != null
                           ? (user.displayName ?? user.email ?? 'User')
                           : 'Guest',
-                      style: const TextStyle(color: Color(0xFF57D463), fontSize: 16),
+                      style: const TextStyle(color: Color(0xFF57D463), fontSize: 18),
                     ),
                   ],
                 ),

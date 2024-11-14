@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'services/auth_service.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'signup.dart';
+import 'register.dart';
 import 'home.dart';
 
 class Login extends StatefulWidget {
@@ -305,7 +305,7 @@ class LoginState extends State<Login> {
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const Signup()),
+              MaterialPageRoute(builder: (context) => const Register()),
             );
           },
           child: const Text(
