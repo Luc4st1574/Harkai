@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart' as url_launcher;
 import 'package:geolocator/geolocator.dart';
@@ -73,7 +74,7 @@ class _HomeState extends State<Home> {
     ),
   };
 
-  final GoogleMapsGeocoding _googleGeocoding = GoogleMapsGeocoding(apiKey: dotenv.env['MAPS_KEY']!);
+  final GoogleMapsGeocoding _googleGeocoding = GoogleMapsGeocoding(apiKey: dotenv.env['GEOCODING_KEY']!);
 
   @override
   void initState() {
@@ -151,8 +152,26 @@ class _HomeState extends State<Home> {
   Future<void> _getAddressFromCoordinates(double latitude, double longitude) async {
     try {
       print("Fetching address for Latitude: $latitude, Longitude: $longitude");
-      
-      final response = await _googleGeocoding.searchByLocation(Location(lat: latitude, lng: longitude));
+
+      // Fetch response from the Geocoding API
+      final response = await _googleGeocoding.searchByLocation(
+        Location(lat: latitude, lng: longitude),
+      );
+
+      // Debug the full response for better visibility
+      print("Full Geocoding Response: ${response.toJson()}");
+
+      // Handle errors in the API response
+      if (response.status != "OK") {
+        print("Error from Geocoding API: ${response.status} - ${response.errorMessage}");
+        setState(() {
+          _locationText = response.errorMessage != null
+              ? "Error fetching address: ${response.errorMessage}"
+              : "Failed to fetch address";
+        });
+        return;
+      }
+
       if (response.results.isEmpty) {
         setState(() {
           _locationText = 'Location: ${latitude.toStringAsFixed(4)}, ${longitude.toStringAsFixed(4)}';
@@ -160,21 +179,24 @@ class _HomeState extends State<Home> {
         return;
       }
 
+      // Parse the address components to find city and country
       final place = response.results.first;
       String? city;
       String? country;
 
-      // Loop through address components to find city and country
       for (var component in place.addressComponents) {
+        print("Component: ${component.longName}, Types: ${component.types}");
         if (component.types.contains("locality")) {
           city = component.longName;
-        } else if (component.types.contains("country")) {
+        }
+        if (component.types.contains("country")) {
           country = component.longName;
         }
       }
 
       print("Parsed Location - City: $city, Country: $country");
 
+      // Update the location text
       setState(() {
         _locationText = city != null && country != null
             ? 'You are in $city, $country'
@@ -187,6 +209,7 @@ class _HomeState extends State<Home> {
       });
     }
   }
+
 
   String get currentEmergencyNumber {
     return _selectedAlert == AlertType.none
@@ -212,7 +235,7 @@ class _HomeState extends State<Home> {
                 child: Column(
                   children: [
                     _buildLocationInfo(),
-                    Expanded(child: _buildPlaceholder(context)),
+                    Expanded(child: _buildMap(context)),
                     _buildAlertButtons(),
                     _buildBottomButtons(context),
                   ],
@@ -298,17 +321,53 @@ class _HomeState extends State<Home> {
     );
   }
 
-  Widget _buildPlaceholder(BuildContext context) {
-    return const SizedBox(
-      height: 300,
-      child: Center(
-        child: Text(
-          'Map Placeholder',
-          style: TextStyle(fontSize: 18, color: Colors.grey),
+  Widget _buildMap(BuildContext context) {
+    if (_latitude == null || _longitude == null) {
+      // If coordinates are not yet available, show a loading indicator
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    try {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+        child: SizedBox(
+          height: 300,
+          width: double.infinity,
+          child: GoogleMap(
+            initialCameraPosition: CameraPosition(
+              target: LatLng(_latitude!, _longitude!),
+              zoom: 14.0,
+            ),
+            markers: {
+              Marker(
+                markerId: const MarkerId('current_location'),
+                position: LatLng(_latitude!, _longitude!),
+                infoWindow: const InfoWindow(title: 'Your Location'),
+              ),
+            },
+            mapType: MapType.normal,
+            myLocationEnabled: true,
+            myLocationButtonEnabled: true,
+            onMapCreated: (GoogleMapController controller) {
+              print('GoogleMap created successfully');
+            },
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      print('Error rendering GoogleMap: $e');
+      return const Center(
+        child: Text(
+          'Failed to load map. Please check your API key and permissions.',
+          style: TextStyle(fontSize: 18, color: Colors.red),
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
   }
+
 
   Widget _buildAlertButtons() {
     return Padding(
