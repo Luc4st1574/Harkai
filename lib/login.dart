@@ -1,5 +1,6 @@
-// ignore_for_file: use_build_context_synchronously
+// ignore_for_file: use_build_context_synchronously, avoid_print
 
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'services/auth_service.dart';
@@ -28,10 +29,13 @@ class LoginState extends State<Login> {
 
   Future<void> _handleGoogleSignIn(BuildContext context) async {
     try {
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) {
-        return; // The user canceled the sign-in
+      print('Existing Firebase apps: ${Firebase.apps}');
+      if (Firebase.apps.isEmpty) {
+        throw Exception('Firebase is not initialized. Check main.dart setup.');
       }
+
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) return; // User canceled the sign-in
 
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
       final OAuthCredential credential = GoogleAuthProvider.credential(
@@ -40,6 +44,7 @@ class LoginState extends State<Login> {
       );
 
       await FirebaseAuth.instance.signInWithCredential(credential);
+
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -51,6 +56,7 @@ class LoginState extends State<Login> {
         MaterialPageRoute(builder: (context) => const Home()),
       );
     } catch (e) {
+      print('Error during Google Sign-In: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to sign in with Google: $e')),
       );

@@ -1,5 +1,6 @@
 // ignore_for_file: avoid_print, deprecated_member_use, use_build_context_synchronously
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -83,16 +84,20 @@ class _HomeState extends State<Home> {
   };
 
   final GoogleMapsGeocoding _googleGeocoding = GoogleMapsGeocoding(apiKey: dotenv.env['GEOCODING_KEY']!);
+  
+  StreamSubscription<Position>? _positionStreamSubscription;
 
   @override
   void initState() {
     super.initState();
     print("Initializing Home screen...");
     _requestPermissions();
-    _determinePosition();
+    _determinePosition(); // Perform geocoding on app start/restart
+    _setupLocationUpdates(); // Start listening for location updates
     _setupHeatPointListener(); // Listen for Firestore updates
     _removeExpiredMarkers(); // Clean up old markers
   }
+
   Future<void> _requestPermissions() async {
     var locationStatus = await Permission.locationWhenInUse.status;
     if (!locationStatus.isGranted) {
@@ -105,11 +110,42 @@ class _HomeState extends State<Home> {
     }
   }
 
+  Future<void> _setupLocationUpdates() async {
+    // Ensure permissions are granted before starting the listener
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (!serviceEnabled || permission == LocationPermission.denied) {
+      print("Location services or permissions are not enabled.");
+      return;
+    }
+
+    // Start listening to location updates
+    _positionStreamSubscription = Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 10, // Update if the user moves 10 meters
+      ),
+    ).listen((Position position) {
+      setState(() {
+        _latitude = position.latitude;
+        _longitude = position.longitude;
+      });
+
+      print("Updated Position - Latitude: $_latitude, Longitude: $_longitude");
+    });
+  }
+
+  @override
+    void dispose() {
+      // Cancel location listener when widget is disposed
+      _positionStreamSubscription?.cancel();
+      super.dispose();
+    }
+
   Future<void> _determinePosition() async {
     bool serviceEnabled;
     LocationPermission permission;
 
-    // Check if location services are enabled.
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       setState(() {
@@ -118,7 +154,6 @@ class _HomeState extends State<Home> {
       return;
     }
 
-    // Check and request location permission
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
@@ -137,19 +172,18 @@ class _HomeState extends State<Home> {
       return;
     }
 
-    // Request current position with high accuracy
     try {
       print("Attempting to retrieve current position...");
       final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high, // Ensure high accuracy
+        desiredAccuracy: LocationAccuracy.high,
       );
+
       _latitude = position.latitude;
       _longitude = position.longitude;
 
-      // Debug prints to verify latitude and longitude
-      print("Current Position - Latitude: $_latitude, Longitude: $_longitude");
+      print("Initial Position - Latitude: $_latitude, Longitude: $_longitude");
 
-      // Fetch address from Google Geocoding API
+      // Perform geocoding once when app starts/restarts
       await _getAddressFromCoordinates(_latitude!, _longitude!);
     } catch (e) {
       print('Error getting location: $e');
