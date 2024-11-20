@@ -1,12 +1,10 @@
 // ignore_for_file: avoid_print
 
 import 'package:flutter/material.dart';
-import 'login.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'home.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,7 +29,6 @@ void main() async {
     }
   } catch (e) {
     print('Error initializing Firebase: $e');
-    // Exit the app or show a meaningful error if Firebase fails to initialize
     runApp(const ErrorApp());
     return;
   }
@@ -51,23 +48,12 @@ class MyApp extends StatelessWidget {
         primaryColor: Colors.green,
         scaffoldBackgroundColor: Colors.transparent,
       ),
-      home: StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasData) {
-            return const Home(); // User is signed in
-          }
-          return const Login(); // User is not signed in
-        },
-      ),
+      home: const SplashScreen(),
     );
   }
 }
 
-// Error fallback widget to display when Firebase initialization fails
+// Error fallback widget for Firebase initialization failures
 class ErrorApp extends StatelessWidget {
   const ErrorApp({super.key});
 
@@ -77,13 +63,31 @@ class ErrorApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         body: Center(
-          child: Text(
-            'Failed to initialize Firebase. Please restart the app.',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.red, fontSize: 18),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // App logo
+              Image(
+                image: AssetImage('assets/images/logo.png'),
+                width: 150,
+                height: 150,
+              ),
+              SizedBox(height: 20), // Space between logo and message
+              // Error message
+              Text(
+                'Failed to initialize Firebase. Please restart the app.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.red,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 }
+

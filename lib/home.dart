@@ -395,11 +395,17 @@ class _HomeState extends State<Home> {
         final user = snapshot.data;
 
         return Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16), // Adjusted padding for better placement
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Image.asset('assets/images/logo.png', height: 60),
+              // App Logo
+              Image.asset(
+                'assets/images/logo.png',
+                height: 60,
+              ),
+
+              // User Profile Section
               GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -407,8 +413,22 @@ class _HomeState extends State<Home> {
                     MaterialPageRoute(builder: (context) => const Profile()),
                   );
                 },
-                child: Column(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
+                    // User Name
+                    Text(
+                      user != null
+                          ? (user.displayName ?? user.email ?? 'User')
+                          : 'Guest',
+                      style: const TextStyle(
+                        color: Color(0xFF57D463),
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(width: 12), // Increased spacing between name and picture
+                    // User Picture
                     user?.photoURL != null
                         ? CircleAvatar(
                             backgroundImage: NetworkImage(user!.photoURL!),
@@ -419,13 +439,6 @@ class _HomeState extends State<Home> {
                             color: Color(0xFF57D463),
                             size: 50,
                           ),
-                    const SizedBox(height: 4),
-                    Text(
-                      user != null
-                          ? (user.displayName ?? user.email ?? 'User')
-                          : 'Guest',
-                      style: const TextStyle(color: Color(0xFF57D463), fontSize: 18),
-                    ),
                   ],
                 ),
               ),
@@ -435,6 +448,9 @@ class _HomeState extends State<Home> {
       },
     );
   }
+
+
+
 
   Widget _buildLocationInfo() {
     return Padding(
