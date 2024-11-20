@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print, deprecated_member_use
+// ignore_for_file: avoid_print, deprecated_member_use, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -7,6 +7,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart' as url_launcher;
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_google_maps_webservices/geocoding.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'profile.dart';
 import 'chatbot.dart';
@@ -47,6 +48,13 @@ class _HomeState extends State<Home> {
   double? _latitude;
   double? _longitude;
 
+  // Firestore Collection Reference
+  final CollectionReference heatPointsCollection =
+      FirebaseFirestore.instance.collection('HeatPoints');
+
+  // Google Map markers
+  Set<Marker> _markers = {};
+
   final Map<AlertType, AlertInfo> alertInfoMap = {
     AlertType.fire: AlertInfo(
       title: 'Fire Alert',
@@ -79,10 +87,12 @@ class _HomeState extends State<Home> {
   @override
   void initState() {
     super.initState();
+    print("Initializing Home screen...");
     _requestPermissions();
     _determinePosition();
+    _setupHeatPointListener(); // Listen for Firestore updates
+    _removeExpiredMarkers(); // Clean up old markers
   }
-
   Future<void> _requestPermissions() async {
     var locationStatus = await Permission.locationWhenInUse.status;
     if (!locationStatus.isGranted) {
@@ -210,6 +220,102 @@ class _HomeState extends State<Home> {
     }
   }
 
+  // Add a marker to Firestore
+  Future<void> _addMarkerToFirestore(AlertType type) async {
+    if (_latitude == null || _longitude == null) {
+      print('Error: Missing location data');
+      return;
+    }
+
+    try {
+      print('Adding marker: Lat=$_latitude, Lng=$_longitude, Type=${type.name}');
+      await heatPointsCollection.add({
+        'latitude': _latitude!,
+        'longitude': _longitude!,
+        'type': type.name,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+      print('Marker successfully added to Firestore');
+    } catch (e) {
+      print('Error adding marker to Firestore: $e');
+    }
+  }
+
+  
+  // Fetch and display markers from Firestore in real-time
+  void _setupHeatPointListener() {
+    heatPointsCollection.snapshots().listen((snapshot) {
+      print("Firestore snapshot received with ${snapshot.docs.length} documents.");
+      setState(() {
+        _markers.clear(); // Clear existing markers before adding new ones
+        for (var doc in snapshot.docs) {
+          final data = doc.data() as Map<String, dynamic>;
+
+          // Debug: Log Firestore data
+          print('Firestore Data: $data');
+
+          // Ensure valid latitude and longitude
+          if (data['latitude'] != null && data['longitude'] != null) {
+            final markerType = AlertType.values.firstWhere(
+              (type) => type.name == data['type'],
+              orElse: () => AlertType.none,
+            );
+
+            // Log the marker type
+            print('Adding marker of type: $markerType');
+
+            // Create the marker
+            final marker = Marker(
+              markerId: MarkerId(doc.id),
+              position: LatLng(data['latitude'], data['longitude']),
+              icon: BitmapDescriptor.defaultMarkerWithHue(_getMarkerColor(markerType)),
+              infoWindow: InfoWindow(
+                title: alertInfoMap[markerType]?.title ?? 'Alert',
+              ),
+            );
+
+            _markers.add(marker);
+          }
+        }
+      });
+    });
+  }
+
+
+  // Clean up old markers from Firestore
+  Future<void> _removeExpiredMarkers() async {
+    final oneHourAgo = DateTime.now().subtract(const Duration(hours: 1));
+    try {
+      final querySnapshot = await heatPointsCollection
+          .where('timestamp', isLessThan: oneHourAgo)
+          .get();
+
+      for (var doc in querySnapshot.docs) {
+        await doc.reference.delete();
+        print('Expired marker removed: ${doc.id}');
+      }
+    } catch (e) {
+      print('Error removing expired markers: $e');
+    }
+  }
+
+
+
+  // Get marker color based on type
+  double _getMarkerColor(AlertType type) {
+    switch (type) {
+      case AlertType.fire:
+        return BitmapDescriptor.hueOrange;
+      case AlertType.crash:
+        return BitmapDescriptor.hueBlue;
+      case AlertType.theft:
+        return BitmapDescriptor.hueRed;
+      case AlertType.dog:
+        return BitmapDescriptor.hueGreen;
+      default:
+        return BitmapDescriptor.hueYellow;
+    }
+  }
 
   String get currentEmergencyNumber {
     return _selectedAlert == AlertType.none
@@ -354,18 +460,20 @@ class _HomeState extends State<Home> {
                   target: LatLng(_latitude!, _longitude!),
                   zoom: 14.0,
                 ),
-                markers: {
-                  Marker(
-                    markerId: const MarkerId('current_location'),
-                    position: LatLng(_latitude!, _longitude!),
-                    infoWindow: const InfoWindow(title: 'Your Location'),
-                  ),
-                },
+                markers: _markers, // Updated to display dynamic markers
                 mapType: MapType.terrain,
                 myLocationEnabled: true,
                 myLocationButtonEnabled: true,
                 onMapCreated: (GoogleMapController controller) {
                   print('GoogleMap created successfully');
+                },
+                onTap: (position) async {
+                  // Add marker on map tap when an alert type is selected
+                  if (_selectedAlert != AlertType.none) {
+                    _latitude = position.latitude;
+                    _longitude = position.longitude;
+                    await _addMarkerToFirestore(_selectedAlert);
+                  }
                 },
               ),
             ),
@@ -383,6 +491,7 @@ class _HomeState extends State<Home> {
       );
     }
   }
+
 
 
   Widget _buildAlertButtons() {
@@ -415,10 +524,25 @@ class _HomeState extends State<Home> {
     final isSelected = _selectedAlert == alertType;
 
     return ElevatedButton(
-      onPressed: () {
+      onPressed: () async {
         setState(() {
+          // Toggle the selected alert
           _selectedAlert = isSelected ? AlertType.none : alertType;
         });
+
+        // If an alert type is selected, add the marker to Firestore
+        if (_selectedAlert != AlertType.none && _latitude != null && _longitude != null) {
+          print("Adding alert of type: $_selectedAlert at Lat=$_latitude, Lng=$_longitude");
+          await _addMarkerToFirestore(_selectedAlert);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('${alertInfo.title} marker added!')),
+          );
+        } else {
+          print('Error: Missing location or alert type');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Unable to add marker: Missing location or alert type')),
+          );
+        }
       },
       style: ElevatedButton.styleFrom(
         backgroundColor: alertInfo.color,
@@ -438,7 +562,6 @@ class _HomeState extends State<Home> {
       ),
     );
   }
-
   Widget _buildBottomButtons(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(16),
