@@ -331,28 +331,44 @@ class _HomeState extends State<Home> {
 
     try {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20.0),
-        child: SizedBox(
-          height: 300,
-          width: double.infinity,
-          child: GoogleMap(
-            initialCameraPosition: CameraPosition(
-              target: LatLng(_latitude!, _longitude!),
-              zoom: 14.0,
-            ),
-            markers: {
-              Marker(
-                markerId: const MarkerId('current_location'),
-                position: LatLng(_latitude!, _longitude!),
-                infoWindow: const InfoWindow(title: 'Your Location'),
+        padding: const EdgeInsets.symmetric(horizontal: 30.0),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15.0),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2), // Shadow color
+                spreadRadius: 6, // Spread radius
+                blurRadius: 6, // Blur radius
+                offset: const Offset(2, 4), // Shadow position
               ),
-            },
-            mapType: MapType.normal,
-            myLocationEnabled: true,
-            myLocationButtonEnabled: true,
-            onMapCreated: (GoogleMapController controller) {
-              print('GoogleMap created successfully');
-            },
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(15.0), // Apply rounded corners
+            child: SizedBox(
+              height: 300,
+              width: double.infinity,
+              child: GoogleMap(
+                initialCameraPosition: CameraPosition(
+                  target: LatLng(_latitude!, _longitude!),
+                  zoom: 14.0,
+                ),
+                markers: {
+                  Marker(
+                    markerId: const MarkerId('current_location'),
+                    position: LatLng(_latitude!, _longitude!),
+                    infoWindow: const InfoWindow(title: 'Your Location'),
+                  ),
+                },
+                mapType: MapType.terrain,
+                myLocationEnabled: true,
+                myLocationButtonEnabled: true,
+                onMapCreated: (GoogleMapController controller) {
+                  print('GoogleMap created successfully');
+                },
+              ),
+            ),
           ),
         ),
       );
