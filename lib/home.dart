@@ -53,7 +53,7 @@ class _HomeState extends State<Home> {
       FirebaseFirestore.instance.collection('HeatPoints');
 
   // Google Map markers
-  Set<Marker> _markers = {};
+  final Set<Marker> _markers = {};
 
   final Map<AlertType, AlertInfo> alertInfoMap = {
     AlertType.fire: AlertInfo(
