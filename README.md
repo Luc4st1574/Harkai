@@ -60,4 +60,10 @@
 
 ## Usage
 
-### Our app is not ready yet, but you can star our repo to keep track of the development of this open-source app that will help everyone!
+<p align="center">
+  <img src="https://github.com/Luc4st1574/Harkai/blob/main/assets/images/6.png" alt="logo" width="600">
+</p>
+
+<p align="center">
+  <img src="https://github.com/Luc4st1574/Harkai/blob/main/assets/images/7.png" alt="logo" width="600">
+</p>
