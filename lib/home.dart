@@ -334,7 +334,6 @@ class _HomeState extends State<Home> {
   }
 
 
-
   // Get marker color based on type
   double _getMarkerColor(AlertType type) {
     switch (type) {
@@ -387,6 +386,7 @@ class _HomeState extends State<Home> {
       ),
     );
   }
+
 
   Widget _buildHeader(BuildContext context) {
     return StreamBuilder<User?>(
@@ -448,8 +448,6 @@ class _HomeState extends State<Home> {
       },
     );
   }
-
-
 
 
   Widget _buildLocationInfo() {
