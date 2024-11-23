@@ -71,7 +71,7 @@ class _HomeState extends State<Home> {
     ),
     AlertType.theft: AlertInfo(
       title: 'Theft Alert',
-      color: Colors.red,
+      color: Colors.purple,
       iconPath: 'assets/images/theft.png',
       emergencyNumber: '(044) 281374',
     ),
@@ -342,11 +342,11 @@ class _HomeState extends State<Home> {
       case AlertType.crash:
         return BitmapDescriptor.hueBlue;
       case AlertType.theft:
-        return BitmapDescriptor.hueRed;
+        return BitmapDescriptor.hueViolet;
       case AlertType.dog:
         return BitmapDescriptor.hueGreen;
       default:
-        return BitmapDescriptor.hueYellow;
+        return BitmapDescriptor.hueRed;
     }
   }
 
@@ -610,11 +610,52 @@ class _HomeState extends State<Home> {
       ),
     );
   }
+
   Widget _buildBottomButtons(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
+          // Emergency Button (Left side)
+          ElevatedButton(
+            onPressed: () async {
+              if (_latitude != null && _longitude != null) {
+                print("Adding strong red marker for alert at Lat=$_latitude, Lng=$_longitude");
+
+                // Add marker to Firestore
+                await heatPointsCollection.add({
+                  'latitude': _latitude!,
+                  'longitude': _longitude!,
+                  'type': 'emergency',
+                  'timestamp': FieldValue.serverTimestamp(),
+                });
+
+                // Show confirmation
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Emergency marker added!')),
+                );
+              } else {
+                print('Error: Missing location data');
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Unable to add marker: Missing location')),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade900, // Emergency red
+              shape: const CircleBorder(), // Circular design
+              padding: const EdgeInsets.all(15), // Adjust padding for consistent size
+              elevation: 8, // Add shadow for better visibility
+              side: const BorderSide(color: Colors.white, width: 2), // Add subtle border
+            ),
+            child: Image.asset(
+              'assets/images/alert.png',
+              height: 28, // Slightly smaller image
+              width: 28,
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Phone Button
           Expanded(
             child: ElevatedButton.icon(
               onPressed: () async {
@@ -667,7 +708,10 @@ class _HomeState extends State<Home> {
               icon: const Icon(Icons.phone, color: Colors.white),
               label: Text(
                 'CALL $currentEmergencyNumber',
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14, // Reduced font size for better fit
+                ),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1E3A8A),
@@ -677,6 +721,7 @@ class _HomeState extends State<Home> {
             ),
           ),
           const SizedBox(width: 16),
+          // Bot Button (Right side)
           Stack(
             alignment: Alignment.topLeft,
             children: [

@@ -52,4 +52,5 @@ flutter:
   - assets/images/dog.png
   - assets/images/fire.png
   - assets/images/theft.png
+  - assets/images/alert.png
   - .env
