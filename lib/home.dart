@@ -496,12 +496,29 @@ class _HomeState extends State<Home> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Column(
-                  children: [
-                    _buildLocationInfo(),
-                    Expanded(child: _buildMap(context)),
-                    _buildAlertButtons(),
-                    _buildBottomButtons(context),
+                child: CustomScrollView(
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: Column(
+                        children: [
+                          _buildLocationInfo(),
+                          _buildMap(context), // Updated with constraints
+                        ],
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: _buildAlertButtons(),
+                      ),
+                    ),
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: Align(
+                        alignment: Alignment.bottomCenter,
+                        child: _buildBottomButtons(context),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -511,7 +528,6 @@ class _HomeState extends State<Home> {
       ),
     );
   }
-
 
   Widget _buildHeader(BuildContext context) {
     return StreamBuilder<User?>(
@@ -664,8 +680,6 @@ class _HomeState extends State<Home> {
       );
     }
   }
-
-
 
   Widget _buildAlertButtons() {
     return Padding(
@@ -845,7 +859,7 @@ class _HomeState extends State<Home> {
                 'CALL $currentEmergencyNumber',
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 14, // Reduced font size for better fit
+                  fontSize: 12, // Reduced font size for better fit
                 ),
               ),
               style: ElevatedButton.styleFrom(

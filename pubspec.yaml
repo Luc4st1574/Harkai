@@ -2,7 +2,7 @@ name: harkai
 description: "An innovative security app created by citizens, designed to empower and protect communities by providing tools and resources that prioritize the safety and well-being of everyone. Built with a deep understanding of local needs, this app fosters collaboration, communication, and trust among neighbors, ensuring a safer environment for all."
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 2.0.0+1
 
 environment:
   sdk: ^3.5.2
