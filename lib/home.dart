@@ -62,19 +62,19 @@ class _HomeState extends State<Home> {
       title: 'Fire Alert',
       color: Colors.orange,
       iconPath: 'assets/images/fire.png',
-      emergencyNumber: '(044) 594473',
+      emergencyNumber: '(044) 226495',
     ),
     AlertType.crash: AlertInfo(
       title: 'Crash Alert',
       color: Colors.blue,
       iconPath: 'assets/images/car.png',
-      emergencyNumber: '949418268',
+      emergencyNumber: '(044) 484242',
     ),
     AlertType.theft: AlertInfo(
       title: 'Theft Alert',
       color: Colors.purple,
       iconPath: 'assets/images/theft.png',
-      emergencyNumber: '(044) 281374',
+      emergencyNumber: '(044) 250664',
     ),
     AlertType.dog: AlertInfo(
       title: 'Dog Alert',
@@ -89,6 +89,40 @@ class _HomeState extends State<Home> {
     emergencyNumber: '911', 
   ),
   };
+
+  String get currentServiceName {
+  switch (_selectedAlert) {
+    case AlertType.fire:
+      return 'Call Firefighters';
+    case AlertType.crash:
+      return 'Call Serenity';
+    case AlertType.theft:
+      return 'Call Police';
+    case AlertType.dog:
+      return 'Call Shelter';
+    case AlertType.emergency:
+      return 'Call Emergencies';
+    default:
+      return 'Call Emergencies';
+  }
+}
+
+String get currentEmergencyNumber {
+  switch (_selectedAlert) {
+    case AlertType.fire:
+      return alertInfoMap[AlertType.fire]!.emergencyNumber;
+    case AlertType.crash:
+      return alertInfoMap[AlertType.crash]!.emergencyNumber;
+    case AlertType.theft:
+      return alertInfoMap[AlertType.theft]!.emergencyNumber;
+    case AlertType.dog:
+      return alertInfoMap[AlertType.dog]!.emergencyNumber;
+    case AlertType.emergency:
+      return alertInfoMap[AlertType.emergency]!.emergencyNumber;
+    default:
+      return '911';
+  }
+}
 
   final GoogleMapsGeocoding _googleGeocoding = GoogleMapsGeocoding(apiKey: dotenv.env['GEOCODING_KEY']!);
   
@@ -475,12 +509,6 @@ class _HomeState extends State<Home> {
     }
   }
 
-  String get currentEmergencyNumber {
-    return _selectedAlert == AlertType.none
-        ? '911'
-        : alertInfoMap[_selectedAlert]!.emergencyNumber;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -755,6 +783,11 @@ class _HomeState extends State<Home> {
     );
   }
 
+  void _resetToDefault() {
+    setState(() {
+      _selectedAlert = AlertType.none; // Reset selected alert
+    });
+  }
 
   Widget _buildBottomButtons(BuildContext context) {
     return Padding(
@@ -778,6 +811,9 @@ class _HomeState extends State<Home> {
                   'description': description ?? '',
                   'timestamp': FieldValue.serverTimestamp(),
                 });
+
+                // Reset phone button to default values
+                _resetToDefault();
 
                 // Show confirmation
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -806,7 +842,7 @@ class _HomeState extends State<Home> {
           const SizedBox(width: 16),
           // Phone Button
           Expanded(
-            child: ElevatedButton.icon(
+            child: ElevatedButton(
               onPressed: () async {
                 final phoneNumber = Uri.encodeFull(currentEmergencyNumber);
                 final Uri launchUri = Uri(
@@ -854,21 +890,36 @@ class _HomeState extends State<Home> {
                   }
                 }
               },
-              icon: const Icon(Icons.phone, color: Colors.white),
-              label: Text(
-                'CALL $currentEmergencyNumber',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12, // Reduced font size for better fit
-                ),
-              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1E3A8A),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12), // Adjusted padding for responsiveness
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.phone, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        currentServiceName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14, // Adjusted font size for better fit
+                          fontWeight: FontWeight.bold,
+                        ),
+                        overflow: TextOverflow.ellipsis, // Ensures the text doesn't overflow
+                        maxLines: 1, // Restrict to a single line
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
+
           const SizedBox(width: 16),
           // Bot Button (Right side)
           Stack(
