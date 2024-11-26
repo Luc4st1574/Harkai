@@ -148,13 +148,13 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
 
   Widget _buildUserAvatar() {
     return Padding(
-      padding: const EdgeInsets.only(left: 8.0, top: 4.0), // Adjust padding as needed
+      padding: const EdgeInsets.only(left: 16.0, right: 10.0, top: 16.0), // Add more horizontal padding
       child: CircleAvatar(
         radius: 20,
         backgroundImage: user?.photoURL != null
             ? NetworkImage(user!.photoURL!) // User's Google profile picture
             : null, // No icon overlay if there's a profile picture
-        backgroundColor: Colors.grey, // No background image if there's no profile picture
+        backgroundColor: Colors.grey, // Background for the avatar
         child: user?.photoURL == null
             ? const Icon(Icons.person, color: Colors.white, size: 20) // Default user icon
             : null, // Background color for the default icon
@@ -180,7 +180,7 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
   Widget _buildMessageBubble(ChatMessage message) {
     return Flexible(
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 16), // Add more horizontal margin
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: message.isHarki ? const Color(0xFF57D463).withOpacity(0.2) : Colors.blue.withOpacity(0.1),
@@ -211,6 +211,7 @@ class _ChatBotScreenState extends State<ChatBotScreen> {
       ),
     );
   }
+
 
 
   Widget _buildLoadingIndicator() {
