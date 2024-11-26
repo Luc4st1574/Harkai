@@ -18,6 +18,7 @@ enum AlertType {
   crash,
   theft,
   dog,
+  emergency,
   none,
 }
 
@@ -81,6 +82,12 @@ class _HomeState extends State<Home> {
       iconPath: 'assets/images/dog.png',
       emergencyNumber: '913684363',
     ),
+    AlertType.emergency: AlertInfo(
+    title: 'Emergency Alert', 
+    color: Colors.red.shade900, 
+    iconPath: 'assets/images/emergency.png', 
+    emergencyNumber: '911', 
+  ),
   };
 
   final GoogleMapsGeocoding _googleGeocoding = GoogleMapsGeocoding(apiKey: dotenv.env['GEOCODING_KEY']!);
@@ -255,18 +262,19 @@ class _HomeState extends State<Home> {
   }
 
   // Add a marker to Firestore
-  Future<void> _addMarkerToFirestore(AlertType type) async {
+  Future<void> _addMarkerToFirestore(AlertType type, [String? description]) async {
     if (_latitude == null || _longitude == null) {
       print('Error: Missing location data');
       return;
     }
 
     try {
-      print('Adding marker: Lat=$_latitude, Lng=$_longitude, Type=${type.name}');
+      print('Adding marker: Lat=$_latitude, Lng=$_longitude, Type=${type.name}, Description=$description');
       await heatPointsCollection.add({
         'latitude': _latitude!,
         'longitude': _longitude!,
-        'type': type.name,
+        'type': type.name, 
+        'description': description ?? '', 
         'timestamp': FieldValue.serverTimestamp(),
       });
       print('Marker successfully added to Firestore');
@@ -274,6 +282,119 @@ class _HomeState extends State<Home> {
       print('Error adding marker to Firestore: $e');
     }
   }
+
+  Future<String?> _showDescriptionModal(AlertType type) async {
+    String? description;
+    return await showDialog<String?>(
+      context: context,
+      builder: (BuildContext context) {
+        return Material(
+          color: Colors.transparent, // Keep the background transparent
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return Center(
+                child: SingleChildScrollView(
+                  child: Container(
+                    constraints: BoxConstraints(
+                      maxWidth: constraints.maxWidth * 0.9, // Improved width responsiveness
+                      maxHeight: constraints.maxHeight * 0.5, // Improved height responsiveness
+                    ),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF001F3F),
+                      borderRadius: BorderRadius.circular(15),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 10,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Modal Title
+                        Text(
+                          'Add Description (Optional)',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: alertInfoMap[type]?.color ?? Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        // Row with Cancel Icon, TextField, and Send Icon
+                        Row(
+                          children: [
+                            // Cancel Icon
+                            IconButton(
+                              onPressed: () {
+                                Navigator.pop(context, null); // Close dialog without saving
+                              },
+                              icon: const Icon(Icons.close, color: Colors.red),
+                              tooltip: 'Cancel',
+                              iconSize: 24,
+                            ),
+                            const SizedBox(width: 8),
+                            // Description TextField
+                            Expanded(
+                              child: TextField(
+                                style: const TextStyle(color: Colors.white),
+                                cursorColor: Colors.blue,
+                                decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: const Color(0xFF001F3F),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: alertInfoMap[type]?.color ?? Colors.blue,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: alertInfoMap[type]?.color ?? Colors.blue,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  hintText: 'Enter a description...',
+                                  hintStyle: const TextStyle(color: Colors.grey),
+                                  contentPadding:
+                                      const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                ),
+                                onChanged: (value) {
+                                  description = value;
+                                },
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            // Send Icon
+                            IconButton(
+                              onPressed: () {
+                                Navigator.pop(context, description); // Return the description
+                              },
+                              icon: Icon(Icons.send, color: alertInfoMap[type]?.color ?? Colors.blue),
+                              tooltip: 'Save',
+                              iconSize: 24,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+
 
   
   // Fetch and display markers from Firestore in real-time
@@ -304,7 +425,8 @@ class _HomeState extends State<Home> {
               position: LatLng(data['latitude'], data['longitude']),
               icon: BitmapDescriptor.defaultMarkerWithHue(_getMarkerColor(markerType)),
               infoWindow: InfoWindow(
-                title: alertInfoMap[markerType]?.title ?? 'Alert',
+                title: alertInfoMap[markerType]?.title ?? 'Alert', // Set the alert title here
+                snippet: data['description'] ?? '', // Optional additional description
               ),
             );
 
@@ -314,6 +436,7 @@ class _HomeState extends State<Home> {
       });
     });
   }
+
 
 
   // Clean up old markers from Firestore
@@ -345,6 +468,8 @@ class _HomeState extends State<Home> {
         return BitmapDescriptor.hueViolet;
       case AlertType.dog:
         return BitmapDescriptor.hueGreen;
+      case AlertType.emergency:
+        return BitmapDescriptor.hueRed;
       default:
         return BitmapDescriptor.hueRed;
     }
@@ -581,7 +706,12 @@ class _HomeState extends State<Home> {
         // If an alert type is selected, add the marker to Firestore
         if (_selectedAlert != AlertType.none && _latitude != null && _longitude != null) {
           print("Adding alert of type: $_selectedAlert at Lat=$_latitude, Lng=$_longitude");
-          await _addMarkerToFirestore(_selectedAlert);
+
+          // Show the description modal and get the entered description
+          final description = await _showDescriptionModal(alertType);
+
+          // Add marker with description
+          await _addMarkerToFirestore(_selectedAlert, description);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('${alertInfo.title} marker added!')),
           );
@@ -611,6 +741,7 @@ class _HomeState extends State<Home> {
     );
   }
 
+
   Widget _buildBottomButtons(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -622,11 +753,15 @@ class _HomeState extends State<Home> {
               if (_latitude != null && _longitude != null) {
                 print("Adding strong red marker for alert at Lat=$_latitude, Lng=$_longitude");
 
-                // Add marker to Firestore
+                // Show the description modal and get the entered description
+                final description = await _showDescriptionModal(AlertType.emergency);
+
+                // Add marker to Firestore with the description
                 await heatPointsCollection.add({
                   'latitude': _latitude!,
                   'longitude': _longitude!,
                   'type': 'emergency',
+                  'description': description ?? '',
                   'timestamp': FieldValue.serverTimestamp(),
                 });
 
