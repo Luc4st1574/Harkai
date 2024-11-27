@@ -156,17 +156,11 @@ class ProfileState extends State<Profile> {
     return ElevatedButton.icon(
       onPressed: onPressed,
       icon: Icon(icon, color: const Color(0xFF001F3F)),
-      label: Text(
-        label,
-        style: const TextStyle(color: Color(0xFF001F3F)),
-        softWrap: false,
-        overflow: TextOverflow.ellipsis, // Prevents text overflow issues
-      ),
+      label: Text(label, style: const TextStyle(color: Color(0xFF001F3F))),
       style: ElevatedButton.styleFrom(
         backgroundColor: const Color(0xFF57D463),
         padding: const EdgeInsets.symmetric(vertical: 12),
-        minimumSize: Size(MediaQuery.of(context).size.width * 0.4, 50), // Ensure proper scaling
-        maximumSize: Size(MediaQuery.of(context).size.width * 0.45, 50), // Limit maximum width
+        minimumSize: const Size(double.infinity, 50),
       ),
     );
   }
