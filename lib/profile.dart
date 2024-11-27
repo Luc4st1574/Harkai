@@ -57,37 +57,33 @@ class ProfileState extends State<Profile> {
               _buildPasswordTile(),
               const SizedBox(height: 32),
 
-              // Align buttons in a single Column with Expanded for equal width
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              // Vertical stack for buttons
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(
-                    child: _buildButton(
-                      icon: Icons.lock,
-                      label: 'Change Password',
-                      onPressed: () {
-                        _showPasswordResetDialog();
-                      },
-                    ),
+                  _buildUnifiedButton(
+                    icon: Icons.lock,
+                    label: 'Change Password',
+                    onPressed: () {
+                      _showPasswordResetDialog();
+                    },
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildButton(
-                      icon: Icons.credit_card,
-                      label: 'Block Cards',
-                      onPressed: _handleBlockCard,
-                    ),
+                  const SizedBox(height: 16),
+                  _buildUnifiedButton(
+                    icon: Icons.credit_card,
+                    label: 'Block Cards',
+                    onPressed: _handleBlockCard,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildUnifiedButton(
+                    icon: Icons.logout,
+                    label: 'Logout',
+                    onPressed: () async {
+                      final authService = AuthService();
+                      await authService.signout(context); // Pass the context here for navigation
+                    },
                   ),
                 ],
-              ),
-              const SizedBox(height: 16),
-              _buildButton(
-                icon: Icons.logout,
-                label: 'Logout',
-                onPressed: () async {
-                  final authService = AuthService();
-                  await authService.signout(context); // Pass the context here for navigation
-                },
               ),
             ],
           ),
@@ -148,7 +144,7 @@ class ProfileState extends State<Profile> {
     );
   }
 
-  Widget _buildButton({
+  Widget _buildUnifiedButton({
     required IconData icon,
     required String label,
     required VoidCallback onPressed,
@@ -159,8 +155,10 @@ class ProfileState extends State<Profile> {
       label: Text(label, style: const TextStyle(color: Color(0xFF001F3F))),
       style: ElevatedButton.styleFrom(
         backgroundColor: const Color(0xFF57D463),
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        minimumSize: const Size(double.infinity, 50),
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
       ),
     );
   }
