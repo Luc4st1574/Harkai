@@ -654,51 +654,52 @@ String get currentEmergencyNumber {
     try {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 30.0),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(15.0),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                spreadRadius: 6,
-                blurRadius: 6,
-                offset: const Offset(2, 4),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return Container(
+              height: constraints.maxHeight, // Dynamically adapt to available height
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(15.0),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    spreadRadius: 6,
+                    blurRadius: 6,
+                    offset: const Offset(2, 4),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(15.0),
-            child: SizedBox(
-              height: 300,
-              width: double.infinity,
-              child: GoogleMap(
-                initialCameraPosition: CameraPosition(
-                  target: LatLng(_latitude!, _longitude!),
-                  zoom: 16.0,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(15.0),
+                child: GoogleMap(
+                  initialCameraPosition: CameraPosition(
+                    target: LatLng(_latitude!, _longitude!),
+                    zoom: 16.0,
+                  ),
+                  markers: _markers.isEmpty ? {} : _markers,
+                  mapType: MapType.terrain,
+                  myLocationEnabled: true,
+                  myLocationButtonEnabled: true,
+                  zoomGesturesEnabled: true, // Habilitar zoom con gestos
+                  scrollGesturesEnabled: true, // Permitir desplazamiento
+                  rotateGesturesEnabled: true, // Permitir rotación
+                  tiltGesturesEnabled: true, // Permitir inclinación
+                  onMapCreated: (GoogleMapController controller) {
+                    debugPrint('GoogleMap created successfully');
+                  },
+                  onTap: (position) async {
+                    if (_selectedAlert != AlertType.none) {
+                      setState(() {
+                        _latitude = position.latitude;
+                        _longitude = position.longitude;
+                      });
+                      await _addMarkerToFirestore(_selectedAlert);
+                    }
+                  },
                 ),
-                markers: _markers.isEmpty ? {} : _markers,
-                mapType: MapType.terrain,
-                myLocationEnabled: true,
-                myLocationButtonEnabled: true,
-                zoomGesturesEnabled: true, // Habilitar zoom con gestos
-                scrollGesturesEnabled: true, // Permitir desplazamiento
-                rotateGesturesEnabled: true, // Permitir rotación
-                tiltGesturesEnabled: true, // Permitir inclinación
-                onMapCreated: (GoogleMapController controller) {
-                  debugPrint('GoogleMap created successfully');
-                },
-                onTap: (position) async {
-                  if (_selectedAlert != AlertType.none) {
-                    setState(() {
-                      _latitude = position.latitude;
-                      _longitude = position.longitude;
-                    });
-                    await _addMarkerToFirestore(_selectedAlert);
-                  }
-                },
               ),
-            ),
-          ),
+            );
+          },
         ),
       );
     } catch (e) {
@@ -712,6 +713,7 @@ String get currentEmergencyNumber {
       );
     }
   }
+
 
   Widget _buildAlertButtons() {
     return Padding(
