@@ -652,38 +652,43 @@ String get currentEmergencyNumber {
     }
 
     try {
+      // Get the available screen height
+      final double screenHeight = MediaQuery.of(context).size.height;
+
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 30.0),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return Container(
-              height: constraints.maxHeight, // Dynamically adapt to available height
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15.0),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    spreadRadius: 6,
-                    blurRadius: 6,
-                    offset: const Offset(2, 4),
-                  ),
-                ],
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15.0),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                spreadRadius: 6,
+                blurRadius: 6,
+                offset: const Offset(2, 4),
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(15.0),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(15.0),
+            child: SizedBox(
+              height: screenHeight * 0.4, // Adjusts to 40% of screen height
+              width: double.infinity,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque, // Ensure gestures reach the map
                 child: GoogleMap(
                   initialCameraPosition: CameraPosition(
                     target: LatLng(_latitude!, _longitude!),
-                    zoom: 16.0,
+                    zoom: 16.0, // Default zoom level
                   ),
-                  markers: _markers.isEmpty ? {} : _markers,
-                  mapType: MapType.terrain,
-                  myLocationEnabled: true,
-                  myLocationButtonEnabled: true,
-                  zoomGesturesEnabled: true, // Habilitar zoom con gestos
-                  scrollGesturesEnabled: true, // Permitir desplazamiento
-                  rotateGesturesEnabled: true, // Permitir rotación
-                  tiltGesturesEnabled: true, // Permitir inclinación
+                  markers: _markers, // Markers from Firestore
+                  mapType: MapType.terrain, // Terrain view
+                  myLocationEnabled: true, // Show current location on map
+                  myLocationButtonEnabled: true, // Allow user to toggle location
+                  zoomGesturesEnabled: true, // Enable pinch-to-zoom
+                  scrollGesturesEnabled: true, // Enable map panning
+                  rotateGesturesEnabled: true, // Enable map rotation
+                  tiltGesturesEnabled: true, // Enable tilting for 3D view
                   onMapCreated: (GoogleMapController controller) {
                     debugPrint('GoogleMap created successfully');
                   },
@@ -693,13 +698,15 @@ String get currentEmergencyNumber {
                         _latitude = position.latitude;
                         _longitude = position.longitude;
                       });
+
+                      // Add marker to Firestore
                       await _addMarkerToFirestore(_selectedAlert);
                     }
                   },
                 ),
               ),
-            );
-          },
+            ),
+          ),
         ),
       );
     } catch (e) {
@@ -713,7 +720,6 @@ String get currentEmergencyNumber {
       );
     }
   }
-
 
   Widget _buildAlertButtons() {
     return Padding(
