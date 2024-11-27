@@ -646,7 +646,6 @@ String get currentEmergencyNumber {
 
   Widget _buildMap(BuildContext context) {
     if (_latitude == null || _longitude == null) {
-      // If coordinates are not yet available, show a loading indicator
       return const Center(
         child: CircularProgressIndicator(),
       );
@@ -660,35 +659,40 @@ String get currentEmergencyNumber {
             borderRadius: BorderRadius.circular(15.0),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2), // Shadow color
-                spreadRadius: 6, // Spread radius
-                blurRadius: 6, // Blur radius
-                offset: const Offset(2, 4), // Shadow position
+                color: Colors.black.withOpacity(0.2),
+                spreadRadius: 6,
+                blurRadius: 6,
+                offset: const Offset(2, 4),
               ),
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(15.0), // Apply rounded corners
+            borderRadius: BorderRadius.circular(15.0),
             child: SizedBox(
               height: 300,
               width: double.infinity,
               child: GoogleMap(
                 initialCameraPosition: CameraPosition(
                   target: LatLng(_latitude!, _longitude!),
-                  zoom: 14.0,
+                  zoom: 16.0,
                 ),
-                markers: _markers, // Updated to display dynamic markers
+                markers: _markers.isEmpty ? {} : _markers,
                 mapType: MapType.terrain,
                 myLocationEnabled: true,
                 myLocationButtonEnabled: true,
+                zoomGesturesEnabled: true, // Habilitar zoom con gestos
+                scrollGesturesEnabled: true, // Permitir desplazamiento
+                rotateGesturesEnabled: true, // Permitir rotación
+                tiltGesturesEnabled: true, // Permitir inclinación
                 onMapCreated: (GoogleMapController controller) {
-                  print('GoogleMap created successfully');
+                  debugPrint('GoogleMap created successfully');
                 },
                 onTap: (position) async {
-                  // Add marker on map tap when an alert type is selected
                   if (_selectedAlert != AlertType.none) {
-                    _latitude = position.latitude;
-                    _longitude = position.longitude;
+                    setState(() {
+                      _latitude = position.latitude;
+                      _longitude = position.longitude;
+                    });
                     await _addMarkerToFirestore(_selectedAlert);
                   }
                 },
@@ -698,7 +702,7 @@ String get currentEmergencyNumber {
         ),
       );
     } catch (e) {
-      print('Error rendering GoogleMap: $e');
+      debugPrint('Error rendering GoogleMap: $e');
       return const Center(
         child: Text(
           'Failed to load map. Please check your API key and permissions.',
