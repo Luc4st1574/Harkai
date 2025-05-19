@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart' as url_launcher;
-import 'package:harkai/services/auth_service.dart';
+import 'package:harkai/modules/services/auth_service.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key});

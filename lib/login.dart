@@ -3,7 +3,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'services/auth_service.dart';
+import 'modules/services/auth_service.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'register.dart';
 import 'home.dart';
