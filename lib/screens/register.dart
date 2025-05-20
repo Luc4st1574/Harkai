@@ -4,8 +4,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'modules/services/auth_service.dart';
-import 'home.dart';
+import '../modules/services/auth_service.dart';
+import 'home/home.dart';
 
 class Register extends StatefulWidget {
   const Register({super.key});
