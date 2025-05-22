@@ -10,19 +10,18 @@ import 'package:geolocator/geolocator.dart' show Position; // Only import Positi
 import '../../modules/services/location_service.dart';
 import '../../modules/services/firestore_service.dart';
 import '../../modules/services/phone_service.dart';
-// import '../../modules/services/permission_service.dart'; // Not directly used here but good to have
 
 // Utils (Models and Map Utilities)
-import '../../modules/utils/app_models.dart';
+import '../../modules/utils/alerts.dart';
 import '../../modules/utils/map_utils.dart';
 
 // Widgets for this screen
-import './widgets/home_header_widget.dart';
-import './widgets/location_info_widget.dart';
-import './widgets/map_display_widget.dart';
-import './widgets/alert_buttons_grid_widget.dart';
-import './widgets/bottom_action_buttons_widget.dart';
-import './widgets/description_modal_content.dart'; // For showDescriptionInputDialog
+import 'widgets/header.dart';
+import 'widgets/location_info.dart';
+import 'widgets/map.dart';
+import 'widgets/alert_buttons.dart';
+import 'widgets/bottom_butons.dart';
+import 'widgets/description_modal.dart'; // For showDescriptionInputDialog
 
 class Home extends StatefulWidget {
   const Home({super.key});

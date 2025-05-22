@@ -3,7 +3,7 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../utils/app_models.dart'; // For AlertType and AlertInfo
+import '../utils/alerts.dart'; // For AlertType and AlertInfo
 
 /// A data class to represent a heat point retrieved from Firestore.
 /// This simplifies handling marker data within the app.

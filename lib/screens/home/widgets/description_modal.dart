@@ -1,7 +1,7 @@
 // ignore_for_file: avoid_print
 
 import 'package:flutter/material.dart';
-import '../../../modules/utils/app_models.dart';
+import '../../../modules/utils/alerts.dart';
 
 /// Displays a modal dialog for the user to input a description.
 Future<String?> showDescriptionInputDialog({

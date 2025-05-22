@@ -1,3 +1,4 @@
+// modules/utils/app_models.dart
 // ignore_for_file: avoid_print
 
 import 'package:flutter/material.dart'; // For Color
@@ -8,58 +9,59 @@ enum AlertType {
   crash,
   theft,
   dog,
-  emergency,
+  emergency, // For the dedicated emergency button and potentially other emergency contexts
   none,
 }
 
 /// Class holding display information and emergency contact details for each alert type.
 class AlertInfo {
   final String title;
-  final Color color;
-  final String iconPath;
-  final String emergencyNumber; 
+  final String emergencyNumber;
+  final Color?
+      color;
+  final String?
+      iconPath;
 
   /// Constructor for AlertInfo.
   AlertInfo({
     required this.title,
-    required this.color,
-    required this.iconPath,
     required this.emergencyNumber,
+    this.color,
+    this.iconPath,
   });
 }
 
 // Global map to easily access AlertInfo for a given AlertType.
-// This is used throughout the app to get details like color, title, icon, and emergency number.
 final Map<AlertType, AlertInfo> alertInfoMap = {
   AlertType.fire: AlertInfo(
     title: 'Fire Alert',
-    color: Colors.orange,
-    iconPath: 'assets/images/fire.png', // Ensure this asset exists
-    emergencyNumber: '(044) 226495', // Example number
+    emergencyNumber: '(044) 226495',
+    color: Colors.orange, 
+    iconPath: 'assets/images/fire.png',
   ),
   AlertType.crash: AlertInfo(
     title: 'Crash Alert',
+    emergencyNumber: '(044) 484242',
     color: Colors.blue,
-    iconPath: 'assets/images/car.png', // Ensure this asset exists
-    emergencyNumber: '(044) 484242', // Example number
+    iconPath: 'assets/images/car.png',
   ),
   AlertType.theft: AlertInfo(
     title: 'Theft Alert',
+    emergencyNumber: '(044) 250664',
     color: Colors.purple,
-    iconPath: 'assets/images/theft.png', // Ensure this asset exists
-    emergencyNumber: '(044) 250664', // Example number
+    iconPath: 'assets/images/theft.png',
   ),
   AlertType.dog: AlertInfo(
     title: 'Dog Alert',
+    emergencyNumber: '913684363',
     color: Colors.green,
-    iconPath: 'assets/images/dog.png', // Ensure this asset exists
-    emergencyNumber: '913684363', // Example number
+    iconPath: 'assets/images/dog.png',
   ),
   AlertType.emergency: AlertInfo(
-    title: 'Emergency Alert',
-    color: Colors.red.shade900,
-    iconPath: 'assets/images/alert.png', // Ensure this asset exists
-    emergencyNumber: '911', // Standard emergency number
+    title: 'Emergency',
+    emergencyNumber: '911',
+    color: Colors.red.shade900, 
+    iconPath: 'assets/images/alert.png'
   ),
 };
 

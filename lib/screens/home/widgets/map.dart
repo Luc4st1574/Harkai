@@ -2,21 +2,15 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import '../../../modules/utils/app_models.dart'; // For AlertType
+import '../../../modules/utils/alerts.dart'; // For AlertType
 
 /// A widget that displays the Google Map with markers and user interaction.
 class MapDisplayWidget extends StatelessWidget {
-  /// The initial latitude for the map's camera.
   final double? initialLatitude;
-  /// The initial longitude for the map's camera.
   final double? initialLongitude;
-  /// A set of markers to display on the map.
   final Set<Marker> markers;
-  /// The currently selected alert type. If not [AlertType.none], tapping the map
   final AlertType selectedAlert;
-  /// Callback function triggered when the map is tapped and an [AlertType]
   final Function(LatLng) onMapTappedWithAlert;
-  /// Optional callback function that is called when the map is created.
   final Function(GoogleMapController)? onMapCreated;
 
   /// Creates a [MapDisplayWidget].
@@ -32,10 +26,14 @@ class MapDisplayWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double screenHeight = MediaQuery.of(context).size.height;
+    // New, larger height factor for the map and loading state
+    const double mapHeightFactor = 0.40; // Changed from 0.35 to 0.55
+
     // Show a loading indicator if initial coordinates are not yet available.
     if (initialLatitude == null || initialLongitude == null) {
       return SizedBox(
-        height: MediaQuery.of(context).size.height * 0.35, // Consistent height
+        height: screenHeight * mapHeightFactor, // Use the new factor
         child: const Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -48,9 +46,6 @@ class MapDisplayWidget extends StatelessWidget {
         ),
       );
     }
-
-    // Get the available screen height for responsive map height.
-    final double screenHeight = MediaQuery.of(context).size.height;
 
     return Container(
       // Padding around the map container.
@@ -73,7 +68,7 @@ class MapDisplayWidget extends StatelessWidget {
           borderRadius: BorderRadius.circular(15.0),
           child: SizedBox(
             // Define the map's height relative to the screen height.
-            height: screenHeight * 0.35, // You can adjust this percentage.
+            height: screenHeight * mapHeightFactor, // Use the new factor
             width: double.infinity,
             child: GoogleMap(
               // A key can help Flutter identify and manage the widget's state correctly.
@@ -82,17 +77,17 @@ class MapDisplayWidget extends StatelessWidget {
                 target: LatLng(initialLatitude!, initialLongitude!),
                 zoom: 16.0, // Default zoom level.
               ),
-              markers: markers, // Set of markers to display.
-              mapType: MapType.terrain, // Type of map tiles to display.
-              myLocationEnabled: true, // Show the user's current location blue dot.
-              myLocationButtonEnabled: true, // Show the button to center map on user's location.
+              markers: markers,
+              mapType: MapType.terrain,
+              myLocationEnabled: true,
+              myLocationButtonEnabled: true,
 
               // Explicitly enable all gesture recognizers for better interactivity.
-              zoomGesturesEnabled: true, 
+              zoomGesturesEnabled: true,
               zoomControlsEnabled: true,
-              scrollGesturesEnabled: true, 
-              rotateGesturesEnabled: true, 
-              tiltGesturesEnabled: true, 
+              scrollGesturesEnabled: true,
+              rotateGesturesEnabled: true,
+              tiltGesturesEnabled: true,
 
               // Callback when the map is created and controller is available.
               onMapCreated: (GoogleMapController controller) {
